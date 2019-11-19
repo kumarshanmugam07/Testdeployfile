@@ -1,0 +1,137 @@
+Type: AWS::AutoScaling::LaunchConfiguration
+Properties:
+  AssociatePublicIpAddress: Boolean
+  BlockDeviceMappings: -----------------------------> Enter Directly
+    - BlockDeviceMapping
+  ClassicLinkVPCId: String
+  ClassicLinkVPCSecurityGroups:
+    - String
+  EbsOptimized: Boolean
+  IamInstanceProfile: String -----------------------> If needed
+  ImageId: String ----------------------------------> Refer Mapping
+  InstanceId: String
+  InstanceMonitoring: Boolean
+  InstanceType: String -----------------------------> Refer Parameter
+  KernelId: String
+  KeyName: String ----------------------------------> Refer Parameter
+  LaunchConfigurationName: String
+  PlacementTenancy: String
+  RamDiskId: String
+  SecurityGroups: -----------------------------------> Refer Other sub-Resource 
+    - SecurityGroup
+  SpotPrice: String ---------------------------------> If needed
+  UserData: String ----------------------------------> Refer Function Base64
+  
+  --------------------------------------------------------------------------------
+  
+Resource:
+ LaunchConfigHandyPro:
+  Type: AWS::AutoScaling::LaunchConfiguration
+  Properties:
+	KeyName: !Ref KeyName
+	ImageId: 
+	
+	
+LaunchConfig:
+    Type: AWS::AutoScaling::LaunchConfiguration
+    Properties:
+      ImageId:
+        Fn::FindInMap:
+        - AWSRegionArch2AMI
+        - Ref: AWS::Region
+        - Fn::FindInMap:
+          - AWSInstanceType2Arch
+          - Ref: InstanceType
+          - Arch
+      UserData:
+        Fn::Base64: '80'
+      SecurityGroups:
+      - Ref: InstanceSecurityGroup
+      InstanceType:
+        Ref: InstanceType
+  InstanceSecurityGroup:
+    Type: AWS::EC2::SecurityGroup
+    Properties:
+      GroupDescription: Enable HTTP access on the configured port
+      VpcId:
+        Ref: VPC
+      SecurityGroupIngress:
+      - IpProtocol: tcp
+        FromPort: '80'
+        ToPort: '80'
+        SourceSecurityGroupId:
+          Ref: LoadBalancerSecurityGroup
+		  
+include the below properties
+  BlockDeviceMappings: 
+      - DeviceName: "/dev/sda1"
+        Ebs: 
+          VolumeSize: "50"
+          VolumeType: "io1"
+          Iops: 200
+      - DeviceName: "/dev/sdm"
+        Ebs: 
+          VolumeSize: "100"
+          DeleteOnTermination: "true"
+------------------------------------------------------------------------------
+Autoscaling 
+
+Type: AWS::AutoScaling::AutoScalingGroup
+Properties:
+  AutoScalingGroupName: String
+  AvailabilityZones:
+    - String
+  Cooldown: String
+  DesiredCapacity: String
+  HealthCheckGracePeriod: Integer
+  HealthCheckType: String
+  InstanceId: String
+  LaunchConfigurationName: String
+  LaunchTemplate: LaunchTemplateSpecification
+  LifecycleHookSpecificationList: 
+    - LifecycleHookSpecification
+  LoadBalancerNames:
+    - String
+  MaxSize: String
+  MetricsCollection:
+    - MetricsCollection
+  MinSize: String
+  MixedInstancesPolicy: 
+    MixedInstancesPolicy
+  NotificationConfigurations:
+    - NotificationConfiguration
+  PlacementGroup: String
+  ServiceLinkedRoleARN: String
+  Tags:
+    - TagProperty
+  TargetGroupARNs:
+    - String
+  TerminationPolicies:
+    - String
+  VPCZoneIdentifier:
+    - String
+
+-------------------------------------------------------------------------------
+
+	
+ WebServerGroup:
+    Type: AWS::AutoScaling::AutoScalingGroup
+    Properties:
+      AvailabilityZones:
+      - Fn::GetAtt:
+        - PrivateSubnet
+        - AvailabilityZone
+      VPCZoneIdentifier:
+      - Ref: PrivateSubnet
+      LaunchConfigurationName:
+        Ref: LaunchConfig
+      MinSize: '1'
+      MaxSize: '5'
+      DesiredCapacity:
+        Ref: InstanceCount
+      LoadBalancerNames:
+      - Ref: ElasticLoadBalancer
+      Tags:
+      - Key: Network
+        Value: Public
+        PropagateAtLaunch: 'true'
