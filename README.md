@@ -6,3 +6,4 @@ TEST3
 Test 4 from cli
 Testing the file 
 full test
+testing
